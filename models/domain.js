@@ -1,5 +1,4 @@
-const { timeStamp } = require('console');
-const Sequelize = require('sequelzie');
+const Sequelize = require('sequelize');
 
 class Domain extends Sequelize.Model {
     static initiate(sequelize) {
