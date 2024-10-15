@@ -93,7 +93,7 @@ exports.getPostsByHashtag = async (req, res) => {
         console.error(error);
         return res.status(500).json({
             code: 500,
-            message: '서버 에러'
+            message: '서버 에러',
         })
     }
 }
