@@ -1,16 +1,16 @@
 const jwt = require('jsonwebtoken');
 
-const { Domain, User } = require('./models');
+const { Domain, User, Post, Hashtag } = require('../models');
 
 // 토큰을 생성하는 함수
 // 전달 받은 클라이언트 비밀키로 도메인이 등록될 것인지 확인
 // 등록되지 않은 도메인 -> 에러메시지
 // 등록된 도메인 -> 토큰 발급
 exports.createToken = async (req, res) => {
-    const { clinetSecret } = req.body; // 클라이언트에서 전달받은 clientSecret 추출
+    const { clientSecret } = req.body; // 클라이언트에서 전달받은 clientSecret 추출
     try {
         const domain = await Domain.findOne({
-            where: { clinetSecret }, // clinetSecret을 기준으로 도메인 검색
+            where: { clientSecret }, // clinetSecret을 기준으로 도메인 검색
             include: {
                 model: User, // 연결된 User 정보도 함께 가져옴
                 attribute: [ 'nick', 'id' ], // User 모델에서 가져올 필드 정의
@@ -55,3 +55,45 @@ exports.createToken = async (req, res) => {
 exports.tokenTest = (req, res) =>  {
     res.json(res.locals.decoded); // 미들웨어에서 검증된 토큰의 decoded 정보를 반환
 };
+
+// 사용자의 게시물을 가져오는 함수
+exports.getMyPosts = (req, res) => {
+    Post.findAll({ where: { userId: res.locals.decoded.id } })
+        .then((posts) => {
+            console.log(posts);
+            res.json({
+                code: 200,
+                payload: posts,
+            });
+        })
+        .catch((error) => {
+            console.error(error);
+            return res.status(500).json({
+                code: 500,
+                message: '서버에러'
+            });
+        });
+};
+
+exports.getPostsByHashtag = async (req, res) => {
+    try {
+        const hashtag = await Hashtag.findOne({ where: { title: req.params.title } });
+        if (!hashtag) {
+            return res.status(404).json({
+                code: 404,
+                message: '검색 결과가 없습니다.'
+            })
+        }
+        const posts = await hashtag.getPost();
+        return res.json({
+            code: 200,
+            payload: posts,
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            code: 500,
+            message: '서버 에러'
+        })
+    }
+}
